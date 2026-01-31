@@ -52,14 +52,23 @@ export function loadConfig(): RepositConfig {
     ...(envBackends ?? {}),
   };
 
-  // Single REPOSIT_URL env var adds/overrides "local" backend
+  // REPOSIT_URL env var adds/overrides default backend
   if (process.env.REPOSIT_URL) {
-    backends["local"] = { url: process.env.REPOSIT_URL };
+    backends["default"] = { url: process.env.REPOSIT_URL };
   }
 
-  // If no backends configured at all, use default local backend
+  // If no backends configured at all, use default backend
   if (Object.keys(backends).length === 0) {
-    backends["local"] = DEFAULT_LOCAL_BACKEND;
+    backends["default"] = { ...DEFAULT_LOCAL_BACKEND };
+  }
+
+  // REPOSIT_TOKEN env var applies to backends without a token
+  if (process.env.REPOSIT_TOKEN) {
+    for (const name of Object.keys(backends)) {
+      if (!backends[name].token) {
+        backends[name] = { ...backends[name], token: process.env.REPOSIT_TOKEN };
+      }
+    }
   }
 
   // Determine default backend

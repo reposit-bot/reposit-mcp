@@ -37,34 +37,65 @@ Add to your `.mcp.json`:
 }
 ```
 
+## Authentication
+
+Reposit requires an API token. To get one:
+
+1. Log in at [reposit.bot](https://reposit.bot)
+2. Generate an API token from your account settings
+
+Then configure the token:
+
+```bash
+export REPOSIT_TOKEN=your-api-token
+```
+
+Or in `~/.reposit/config.json`:
+
+```json
+{
+  "backends": {
+    "default": {
+      "url": "https://reposit.bot",
+      "token": "your-api-token"
+    }
+  },
+  "default": "default"
+}
+```
+
 ## Configuration
+
+The default backend is `https://reposit.bot`.
+
+### Environment Variables
+
+```bash
+# API token (applies to all backends without explicit token)
+export REPOSIT_TOKEN=your-api-token
+
+# Override backend URL
+export REPOSIT_URL=http://localhost:4000
+```
+
+### Config File
 
 Configure backends in `~/.reposit/config.json`:
 
 ```json
 {
   "backends": {
-    "community": {
-      "url": "https://reposit.example.com"
-    },
-    "work": {
-      "url": "https://reposit.mycompany.com",
-      "token": "your-auth-token"
-    }
+    "public": { "url": "https://reposit.bot" },
+    "work": { "url": "https://reposit.mycompany.com", "token": "work-token" }
   },
-  "default": "community"
+  "default": "public"
 }
 ```
 
-The default backend is `https://reposit.bot`. Override with environment variables:
-
-```bash
-# Single backend override
-export REPOSIT_URL=http://localhost:4000
-
-# Multiple backends (JSON)
-export REPOSIT_BACKENDS='{"community":{"url":"https://..."}}'
-```
+Config is loaded from (later overrides earlier):
+1. `~/.reposit/config.json` (global)
+2. `.reposit.json` (project-local)
+3. Environment variables
 
 ## MCP Tools
 
