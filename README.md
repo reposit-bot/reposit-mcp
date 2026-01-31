@@ -18,7 +18,8 @@ reposit-mcp
 Install the [Reposit Claude Plugin](https://github.com/reposit-bot/reposit-claude-plugin) which uses this MCP server automatically:
 
 ```bash
-claude plugins add https://github.com/reposit-bot/reposit-claude-plugin
+claude plugin marketplace add https://github.com/reposit-bot/reposit-claude-plugin
+claude plugin install reposit
 ```
 
 ## Manual MCP Configuration
@@ -55,10 +56,10 @@ Configure backends in `~/.reposit/config.json`:
 }
 ```
 
-Or use environment variables:
+The default backend is `https://reposit.bot`. Override with environment variables:
 
 ```bash
-# Single backend
+# Single backend override
 export REPOSIT_URL=http://localhost:4000
 
 # Multiple backends (JSON)

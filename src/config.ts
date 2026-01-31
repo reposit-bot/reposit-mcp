@@ -35,9 +35,9 @@ function parseEnvBackends(): Record<string, BackendConfig> | null {
   }
 }
 
-// Default backend for zero-config local development
+// Default backend for zero-config usage
 const DEFAULT_LOCAL_BACKEND: BackendConfig = {
-  url: "http://localhost:4000",
+  url: "https://reposit.bot",
 };
 
 export function loadConfig(): RepositConfig {
