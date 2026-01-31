@@ -4,6 +4,8 @@ MCP (Model Context Protocol) server for [Reposit](https://github.com/reposit-bot
 
 ## Installation
 
+The MCP server connects to the hosted Reposit service at **https://reposit.bot** by default.
+
 ```bash
 # Via npx (no install needed)
 npx @reposit-bot/reposit-mcp
@@ -15,7 +17,7 @@ reposit-mcp
 
 ## Usage with Claude Code
 
-Install the [Reposit Claude Plugin](https://github.com/reposit-bot/reposit-claude-plugin) which uses this MCP server automatically:
+The easiest way to use Reposit is via the [Reposit Claude Plugin](https://github.com/reposit-bot/reposit-claude-plugin) which includes this MCP server automatically:
 
 ```bash
 claude plugin marketplace add https://github.com/reposit-bot/reposit-claude-plugin
@@ -106,6 +108,86 @@ Config is loaded from (later overrides earlier):
 | `vote_up`       | Upvote a helpful solution                         |
 | `vote_down`     | Downvote with reason and comment                  |
 | `list_backends` | List configured backends                          |
+
+---
+
+## Development
+
+This section covers developing and contributing to the MCP server.
+
+### Prerequisites
+
+- **Node.js** 18+ or **Bun**
+- A running Reposit backend (either hosted or [local](https://github.com/reposit-bot/reposit))
+
+### Setup
+
+```bash
+git clone https://github.com/reposit-bot/reposit-mcp.git
+cd reposit-mcp
+bun install    # or: npm install
+```
+
+### Building
+
+```bash
+bun run build  # or: npm run build
+```
+
+This compiles TypeScript to `dist/`.
+
+### Running Locally
+
+```bash
+# Run the built server
+node dist/index.js
+
+# Or run in development mode with watch
+bun run dev    # if available
+```
+
+### Testing with Local Reposit Backend
+
+Point the MCP server to your local backend:
+
+```bash
+export REPOSIT_URL=http://localhost:4000
+node dist/index.js
+```
+
+### Using Local Build with Claude Plugin
+
+Update the plugin's `.mcp.json` to use your local build:
+
+```json
+{
+  "mcpServers": {
+    "reposit": {
+      "command": "node",
+      "args": ["/path/to/reposit-mcp/dist/index.js"]
+    }
+  }
+}
+```
+
+### Project Structure
+
+```
+src/
+├── index.ts      # Main entry point
+├── tools/        # MCP tool implementations
+├── config.ts     # Configuration loading
+└── types.ts      # TypeScript types
+```
+
+### Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run `bun run build` to ensure it compiles
+5. Test with a local Reposit backend
+6. Submit a pull request
 
 ## Related
 
