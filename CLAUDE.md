@@ -103,6 +103,16 @@ Tools are configured to trigger automatically based on context:
 2. Build and run: `bun run build && bun start`
 3. Test with MCP Inspector or the reposit-claude-plugin
 
+## Pre-commit
+
+**ALWAYS run before committing:**
+
+```bash
+bun run build
+```
+
+This ensures TypeScript compiles successfully. The npm package ships compiled JS, so broken builds = broken package.
+
 ## Git
 
 This directory is its own git repo (separate from the root monorepo).

@@ -259,7 +259,7 @@ server.setRequestHandler(
             problem: string;
             solution: string;
             backend?: string;
-            tags?: string[];
+            tags?: { language?: string[]; framework?: string[]; domain?: string[]; platform?: string[] };
           };
 
           const [{ name: backendName }] = getBackends(config, backend);
