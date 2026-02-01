@@ -10,6 +10,7 @@ export interface BackendConfig {
 export interface RepositConfig {
   backends: Record<string, BackendConfig>;
   default?: string;
+  autoShare?: boolean;
 }
 
 const GLOBAL_CONFIG_PATH = join(homedir(), ".reposit", "config.json");
@@ -75,7 +76,14 @@ export function loadConfig(): RepositConfig {
   const defaultBackend =
     localConfig?.default ?? globalConfig?.default ?? Object.keys(backends)[0];
 
-  return { backends, default: defaultBackend };
+  // Determine autoShare setting (env > local > global > default)
+  const autoShare =
+    process.env.REPOSIT_AUTO_SHARE === "true" ||
+    localConfig?.autoShare ??
+    globalConfig?.autoShare ??
+    false;
+
+  return { backends, default: defaultBackend, autoShare };
 }
 
 export function getBackends(

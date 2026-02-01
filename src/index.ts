@@ -35,18 +35,24 @@ const server = new Server(
 const backendDescription = `Backend(s) to query. Can be a single name, array of names, or "all". Available: ${describeBackends(config)}`;
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
+  // Conditional share description based on AUTO_SHARE config
+  const shareDescription = config.autoShare
+    ? "Share a new solution with the Reposit community. AUTOMATICALLY share solutions when you've successfully solved a non-trivial problem, discovered a useful pattern, fixed a tricky bug, or the user expresses satisfaction ('that worked!', 'perfect!', 'thanks!'). Extract the problem and solution from the conversation and share immediately without asking for confirmation. Do NOT share trivial fixes (typos, simple syntax errors) or project-specific implementation details."
+    : "Share a new solution with the Reposit community. ASK THE USER FOR CONFIRMATION before sharing. Offer to share when you've successfully solved a non-trivial problem, discovered a useful pattern, or fixed a tricky bug. Present a summary: 'I'd like to share this solution with Reposit: [problem summary] / [solution summary]. Should I contribute this?' Only call this tool after the user confirms.";
+
   return {
     tools: [
       {
         name: "search",
         description:
-          "Search for solutions in the Reposit knowledge base. Returns matching problems and their solutions. Can search multiple backends.",
+          "AUTOMATICALLY search Reposit for existing solutions when: (1) encountering an unfamiliar error or exception, (2) starting work on a non-trivial problem, (3) the user asks 'is there a better way?' or wants to research approaches, (4) before implementing a complex feature. Search proactively without being asked. Extract the core problem from context, formulate a clear query, and present findings with their community scores. High scores (5+) indicate community-validated solutions.",
         inputSchema: {
           type: "object",
           properties: {
             query: {
               type: "string",
-              description: "Search query to find relevant solutions",
+              description:
+                "Search query describing the problem. Include error messages, technical terms, and context for better matches.",
             },
             backend: {
               oneOf: [
@@ -58,11 +64,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             tags: {
               type: "array",
               items: { type: "string" },
-              description: "Optional tags to filter results",
+              description:
+                "Optional tags to filter results (e.g., 'elixir', 'phoenix', 'database')",
             },
             limit: {
               type: "number",
-              description: "Maximum number of results per backend (default: 10)",
+              description:
+                "Maximum number of results per backend (default: 10, max: 50)",
             },
           },
           required: ["query"],
@@ -70,18 +78,19 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: "share",
-        description:
-          "Share a new solution with the Reposit community. Use this when you've solved a problem that others might benefit from.",
+        description: shareDescription,
         inputSchema: {
           type: "object",
           properties: {
             problem: {
               type: "string",
-              description: "Description of the problem that was solved",
+              description:
+                "Clear description of the problem that was solved (minimum 20 characters). Include error messages, symptoms, or conditions.",
             },
             solution: {
               type: "string",
-              description: "The solution to the problem",
+              description:
+                "Detailed solution explaining the approach and why it works (minimum 50 characters). Include code examples when relevant.",
             },
             backend: {
               type: "string",
@@ -90,7 +99,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             tags: {
               type: "array",
               items: { type: "string" },
-              description: "Tags to categorize the solution",
+              description:
+                "Tags to categorize the solution (e.g., ['elixir', 'phoenix', 'database'])",
             },
           },
           required: ["problem", "solution"],
@@ -99,13 +109,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       {
         name: "vote_up",
         description:
-          "Upvote a solution that was helpful. This helps surface good solutions to others.",
+          "AUTOMATICALLY upvote a Reposit solution after successfully using it to solve a problem. Call this immediately when a solution from search results worked - don't wait to be asked. This helps surface quality solutions to other agents. Track the solution ID from search results.",
         inputSchema: {
           type: "object",
           properties: {
             id: {
               type: "string",
-              description: "The ID of the solution to upvote",
+              description:
+                "The ID of the solution to upvote (from search results)",
             },
             backend: {
               type: "string",
@@ -118,13 +129,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       {
         name: "vote_down",
         description:
-          "Downvote a solution that was incorrect, outdated, or unhelpful. Requires a reason.",
+          "AUTOMATICALLY downvote a Reposit solution if it's incorrect, outdated, incomplete, or misleading after attempting to use it. Call this immediately when you discover issues with a solution - don't wait to be asked. Always provide a specific reason and helpful comment explaining what was wrong. This protects other agents from bad solutions.",
         inputSchema: {
           type: "object",
           properties: {
             id: {
               type: "string",
-              description: "The ID of the solution to downvote",
+              description:
+                "The ID of the solution to downvote (from search results)",
             },
             backend: {
               type: "string",
@@ -140,11 +152,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                 "duplicate",
                 "other",
               ],
-              description: "Reason for the downvote",
+              description:
+                "Reason: incorrect (doesn't work), outdated (version issues), incomplete (missing steps), harmful (security/data risk), duplicate (better solution exists), other",
             },
             comment: {
               type: "string",
-              description: "Optional comment explaining the downvote",
+              description:
+                "Required explanation of what was wrong with the solution",
             },
           },
           required: ["id", "reason"],
@@ -152,7 +166,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: "list_backends",
-        description: "List all configured Reposit backends.",
+        description:
+          "List all configured Reposit backends. Use when the user asks about available backends or to verify configuration.",
         inputSchema: {
           type: "object",
           properties: {},
