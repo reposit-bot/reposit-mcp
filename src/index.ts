@@ -360,8 +360,8 @@ server.setRequestHandler(
           const client = new RepositClient(backendUrl);
           const deviceAuth = await client.startDeviceAuth();
 
-          // Try to open browser
-          const openUrl = deviceAuth.verification_url;
+          // Try to open browser with code pre-filled in URL
+          const openUrl = `${deviceAuth.verification_url}?code=${encodeURIComponent(deviceAuth.user_code)}`;
           let browserOpened = false;
           try {
             const platform = process.platform;
