@@ -116,3 +116,14 @@ This ensures TypeScript compiles successfully. The npm package ships compiled JS
 ## Git
 
 This directory is its own git repo (separate from the root monorepo).
+
+## Releasing
+
+Releases are done via GitHub releases, which triggers npm publishing via GitHub Actions:
+
+```bash
+# After bumping version in package.json and committing:
+gh release create v0.x.x --title "v0.x.x: Brief description" --notes "Release notes here"
+```
+
+The release tag should match the version in `package.json` (prefixed with `v`).
