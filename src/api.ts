@@ -99,12 +99,17 @@ export class RepositClient {
     return response.data;
   }
 
-  async pollDeviceAuth(deviceCode: string): Promise<DevicePollResponse> {
+  async pollDeviceAuth(deviceCode: string, deviceName?: string): Promise<DevicePollResponse> {
+    const body: Record<string, string> = { device_code: deviceCode };
+    if (deviceName) {
+      body.device_name = deviceName;
+    }
+
     const response = await this.request<{ data: DevicePollResponse }>(
       "/api/v1/auth/device/poll",
       {
         method: "POST",
-        body: JSON.stringify({ device_code: deviceCode }),
+        body: JSON.stringify(body),
       }
     );
     return response.data;

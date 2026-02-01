@@ -10,6 +10,7 @@ import {
 import { RepositClient, type Solution } from "./api.js";
 import { loadConfig, getBackends, saveBackendToken, GLOBAL_CONFIG_PATH, type RepositConfig } from "./config.js";
 import { exec } from "node:child_process";
+import { hostname } from "node:os";
 
 const config = loadConfig();
 
@@ -423,7 +424,7 @@ server.setRequestHandler(
             attempts++;
 
             try {
-              const pollResult = await client.pollDeviceAuth(deviceAuth.device_code);
+              const pollResult = await client.pollDeviceAuth(deviceAuth.device_code, hostname());
 
               if (pollResult.status === "complete" && pollResult.token) {
                 // Save the token to config
