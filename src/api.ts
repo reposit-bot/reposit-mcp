@@ -53,14 +53,14 @@ export class RepositClient {
   async share(
     problem: string,
     solution: string,
-    tags?: string[]
+    tags?: { language?: string[]; framework?: string[]; domain?: string[]; platform?: string[] }
   ): Promise<Solution> {
+    const body = tags
+      ? { problem, solution, tags }
+      : { problem, solution };
     const response = await this.request<{ data: Solution }>(
       "/api/v1/solutions",
-      {
-        method: "POST",
-        body: JSON.stringify({ problem, solution, tags: tags ?? [] }),
-      }
+      { method: "POST", body: JSON.stringify(body) }
     );
     return response.data;
   }

@@ -98,10 +98,31 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               description: backendDescription,
             },
             tags: {
-              type: "array",
-              items: { type: "string" },
+              type: "object",
               description:
-                "Tags to categorize the solution (e.g., ['elixir', 'phoenix', 'database'])",
+                "Structured tags: object with optional keys language, framework, domain, platform (each an array of strings). E.g. { language: ['elixir'], framework: ['phoenix', 'liveview'], domain: ['web'], platform: ['backend'] }.",
+              properties: {
+                language: {
+                  type: "array",
+                  items: { type: "string" },
+                  description: "Programming languages (e.g. elixir, javascript)",
+                },
+                framework: {
+                  type: "array",
+                  items: { type: "string" },
+                  description: "Frameworks or libraries (e.g. phoenix, liveview)",
+                },
+                domain: {
+                  type: "array",
+                  items: { type: "string" },
+                  description: "Domain (e.g. web, api, database)",
+                },
+                platform: {
+                  type: "array",
+                  items: { type: "string" },
+                  description: "Platform (e.g. backend, frontend)",
+                },
+              },
             },
           },
           required: ["problem", "solution"],
