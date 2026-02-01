@@ -13,6 +13,19 @@ export interface SearchResult {
   total: number;
 }
 
+export interface DeviceCodeResponse {
+  device_code: string;
+  user_code: string;
+  verification_url: string;
+  expires_in: number;
+  interval: number;
+}
+
+export interface DevicePollResponse {
+  status: "pending" | "complete";
+  token?: string;
+}
+
 export class RepositClient {
   constructor(
     private baseUrl: string,
@@ -70,6 +83,28 @@ export class RepositClient {
       {
         method: "POST",
         body: JSON.stringify({ reason, comment }),
+      }
+    );
+    return response.data;
+  }
+
+  async startDeviceAuth(): Promise<DeviceCodeResponse> {
+    const response = await this.request<{ data: DeviceCodeResponse }>(
+      "/api/v1/auth/device",
+      {
+        method: "POST",
+        body: JSON.stringify({ backend_url: this.baseUrl }),
+      }
+    );
+    return response.data;
+  }
+
+  async pollDeviceAuth(deviceCode: string): Promise<DevicePollResponse> {
+    const response = await this.request<{ data: DevicePollResponse }>(
+      "/api/v1/auth/device/poll",
+      {
+        method: "POST",
+        body: JSON.stringify({ device_code: deviceCode }),
       }
     );
     return response.data;

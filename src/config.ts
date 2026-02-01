@@ -1,6 +1,6 @@
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
 
 export interface BackendConfig {
   url: string;
@@ -120,3 +120,44 @@ export function getBackends(
     return { name, backend };
   });
 }
+
+/**
+ * Saves or updates a backend configuration with a token.
+ * Creates the config file if it doesn't exist.
+ */
+export function saveBackendToken(
+  backendName: string,
+  url: string,
+  token: string
+): void {
+  // Read existing config or create empty
+  let config: Partial<RepositConfig> = loadJsonFile(GLOBAL_CONFIG_PATH) ?? {
+    backends: {},
+  };
+
+  // Ensure backends object exists
+  if (!config.backends) {
+    config.backends = {};
+  }
+
+  // Update or create the backend
+  config.backends[backendName] = {
+    ...(config.backends[backendName] ?? {}),
+    url,
+    token,
+  };
+
+  // Set as default if no default exists
+  if (!config.default) {
+    config.default = backendName;
+  }
+
+  // Write config
+  const dir = dirname(GLOBAL_CONFIG_PATH);
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
+  }
+  writeFileSync(GLOBAL_CONFIG_PATH, JSON.stringify(config, null, 2) + "\n");
+}
+
+export { GLOBAL_CONFIG_PATH };

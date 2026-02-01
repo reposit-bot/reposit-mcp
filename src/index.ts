@@ -8,7 +8,8 @@ import {
   CallToolResult,
 } from "@modelcontextprotocol/sdk/types.js";
 import { RepositClient, type Solution } from "./api.js";
-import { loadConfig, getBackends, type RepositConfig } from "./config.js";
+import { loadConfig, getBackends, saveBackendToken, GLOBAL_CONFIG_PATH, type RepositConfig } from "./config.js";
+import { exec } from "node:child_process";
 
 const config = loadConfig();
 
@@ -173,6 +174,26 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           properties: {},
         },
       },
+      {
+        name: "login",
+        description:
+          "Authenticate with a Reposit backend to enable sharing and voting. Use this when authentication is required (e.g., after receiving an 'unauthorized' error). Opens a browser for the user to log in, then saves the token automatically.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            backend: {
+              type: "string",
+              description:
+                "Name of the backend to authenticate with. If not specified, uses the default backend.",
+            },
+            url: {
+              type: "string",
+              description:
+                "URL of a new backend to add and authenticate with. Use this to add a new backend that isn't configured yet.",
+            },
+          },
+        },
+      },
     ],
   };
 });
@@ -282,6 +303,147 @@ server.setRequestHandler(
 
           return {
             content: [{ type: "text", text: JSON.stringify(backends, null, 2) }],
+          };
+        }
+
+        case "login": {
+          const { backend: backendArg, url: newUrl } = args as {
+            backend?: string;
+            url?: string;
+          };
+
+          // Determine backend name and URL
+          let backendName: string;
+          let backendUrl: string;
+
+          if (newUrl) {
+            // Adding a new backend
+            // Extract name from URL hostname
+            const urlObj = new URL(newUrl);
+            backendName = backendArg || urlObj.hostname.replace(/\./g, "-");
+            backendUrl = newUrl;
+          } else if (backendArg) {
+            // Using existing backend
+            const existingBackend = config.backends[backendArg];
+            if (!existingBackend) {
+              return {
+                content: [
+                  {
+                    type: "text",
+                    text: `Backend "${backendArg}" not found. Available: ${Object.keys(config.backends).join(", ") || "none"}. Use the 'url' parameter to add a new backend.`,
+                  },
+                ],
+                isError: true,
+              };
+            }
+            backendName = backendArg;
+            backendUrl = existingBackend.url;
+          } else {
+            // Use default backend
+            const defaultName = config.default || Object.keys(config.backends)[0];
+            if (!defaultName || !config.backends[defaultName]) {
+              return {
+                content: [
+                  {
+                    type: "text",
+                    text: "No backend configured. Use the 'url' parameter to add one (e.g., url: 'https://reposit.bot').",
+                  },
+                ],
+                isError: true,
+              };
+            }
+            backendName = defaultName;
+            backendUrl = config.backends[defaultName].url;
+          }
+
+          // Start device auth flow
+          const client = new RepositClient(backendUrl);
+          const deviceAuth = await client.startDeviceAuth();
+
+          // Try to open browser
+          const openUrl = deviceAuth.verification_url;
+          let browserOpened = false;
+          try {
+            const platform = process.platform;
+            const cmd =
+              platform === "darwin"
+                ? `open "${openUrl}"`
+                : platform === "win32"
+                  ? `start "${openUrl}"`
+                  : `xdg-open "${openUrl}"`;
+
+            await new Promise<void>((resolve) => {
+              exec(cmd, (err) => {
+                browserOpened = !err;
+                resolve();
+              });
+            });
+          } catch {
+            // Browser open is best-effort
+          }
+
+          // Log progress to stderr (visible to user in terminal)
+          console.error(`\n🔐 Authenticating with ${backendName}...`);
+          console.error(`   Code: ${deviceAuth.user_code}`);
+          console.error(`   URL: ${openUrl}`);
+          if (browserOpened) {
+            console.error(`   (Browser opened automatically)`);
+          }
+          console.error(`   Waiting for you to log in and enter the code...\n`);
+
+          // Poll for completion
+          const pollInterval = (deviceAuth.interval || 5) * 1000;
+          const maxAttempts = Math.ceil((deviceAuth.expires_in || 900) / (deviceAuth.interval || 5));
+          let attempts = 0;
+
+          while (attempts < maxAttempts) {
+            await new Promise((resolve) => setTimeout(resolve, pollInterval));
+            attempts++;
+
+            try {
+              const pollResult = await client.pollDeviceAuth(deviceAuth.device_code);
+
+              if (pollResult.status === "complete" && pollResult.token) {
+                // Save the token to config
+                saveBackendToken(backendName, backendUrl, pollResult.token);
+
+                console.error(`✅ Authenticated successfully!\n`);
+
+                return {
+                  content: [
+                    {
+                      type: "text",
+                      text: `Successfully authenticated with "${backendName}"!\n\nToken saved to ${GLOBAL_CONFIG_PATH}\n\nYou can now use share, vote_up, and vote_down tools.`,
+                    },
+                  ],
+                };
+              }
+              // Still pending, continue polling
+            } catch (pollError) {
+              // Might be rate limited or expired, continue trying
+              const msg = pollError instanceof Error ? pollError.message : String(pollError);
+              if (msg.includes("not_found") || msg.includes("expired")) {
+                return {
+                  content: [
+                    {
+                      type: "text",
+                      text: `Authentication failed: ${msg}. Please try again.`,
+                    },
+                  ],
+                  isError: true,
+                };
+              }
+            }
+          }
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Authentication timed out. The code "${deviceAuth.user_code}" has expired. Please try again.`,
+              },
+            ],
+            isError: true,
           };
         }
 
