@@ -79,9 +79,7 @@ export function loadConfig(): RepositConfig {
   // Determine autoShare setting (env > local > global > default)
   const autoShare =
     process.env.REPOSIT_AUTO_SHARE === "true" ||
-    localConfig?.autoShare ??
-    globalConfig?.autoShare ??
-    false;
+    (localConfig?.autoShare ?? globalConfig?.autoShare ?? false);
 
   return { backends, default: defaultBackend, autoShare };
 }
