@@ -34,7 +34,8 @@ const server = new Server(
   { capabilities: { tools: {} } }
 );
 
-const backendDescription = `Backend(s) to query. Can be a single name, array of names, or "all". Available: ${describeBackends(config)}`;
+const backendDescription = `Backend(s) to use. Can be a single name, array of names, or "all". Available: ${describeBackends(config)}`;
+const searchBackendDescription = `Backend(s) to search. If omitted, searches all backends. Can be a single name, array of names, or "all". Available: ${describeBackends(config)}`;
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   // Conditional share description based on AUTO_SHARE config
@@ -61,7 +62,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                 { type: "string" },
                 { type: "array", items: { type: "string" } },
               ],
-              description: backendDescription,
+              description: searchBackendDescription,
             },
             tags: {
               type: "array",
@@ -235,7 +236,8 @@ server.setRequestHandler(
             limit?: number;
           };
 
-          const backends = getBackends(config, backend);
+          // When no backend specified, search all backends (default for search is "all")
+          const backends = getBackends(config, backend ?? "all");
           const results: { backend: string; solutions: Solution[]; total: number }[] = [];
 
           await Promise.all(

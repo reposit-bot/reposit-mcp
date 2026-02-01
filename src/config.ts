@@ -158,4 +158,42 @@ export function saveBackendToken(
   writeFileSync(GLOBAL_CONFIG_PATH, JSON.stringify(config, null, 2) + "\n");
 }
 
+/**
+ * Adds or updates a backend in global config (~/.reposit/config.json).
+ * Use this to add a backend without editing the file manually (e.g. with a token from Settings).
+ */
+export function addBackend(
+  backendName: string,
+  url: string,
+  options?: { token?: string; setAsDefault?: boolean }
+): void {
+  let config: Partial<RepositConfig> = loadJsonFile(GLOBAL_CONFIG_PATH) ?? {
+    backends: {},
+  };
+
+  if (!config.backends) {
+    config.backends = {};
+  }
+
+  config.backends[backendName] = {
+    ...(config.backends[backendName] ?? {}),
+    url,
+    ...(options?.token !== undefined && options.token !== ""
+      ? { token: options.token }
+      : {}),
+  };
+
+  if (options?.setAsDefault) {
+    config.default = backendName;
+  } else if (!config.default || !config.backends[config.default]) {
+    config.default = backendName;
+  }
+
+  const dir = dirname(GLOBAL_CONFIG_PATH);
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
+  }
+  writeFileSync(GLOBAL_CONFIG_PATH, JSON.stringify(config, null, 2) + "\n");
+}
+
 export { GLOBAL_CONFIG_PATH };
