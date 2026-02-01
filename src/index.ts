@@ -427,8 +427,14 @@ server.setRequestHandler(
               const pollResult = await client.pollDeviceAuth(deviceAuth.device_code, hostname());
 
               if (pollResult.status === "complete" && pollResult.token) {
-                // Save the token to config
+                // Save the token to config file
                 saveBackendToken(backendName, backendUrl, pollResult.token);
+
+                // Update in-memory config so subsequent tool calls use the new token
+                if (!config.backends[backendName]) {
+                  config.backends[backendName] = { url: backendUrl };
+                }
+                config.backends[backendName].token = pollResult.token;
 
                 console.error(`✅ Authenticated successfully!\n`);
 
