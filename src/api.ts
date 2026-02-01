@@ -133,10 +133,14 @@ export class RepositClient {
       const body = await response.text();
       let message = `HTTP ${response.status}`;
       try {
-        const json = JSON.parse(body);
-        if (json.error) message = json.error;
+        const json = JSON.parse(body) as { error?: string; hint?: string };
+        if (json.hint) message = json.hint;
+        else if (json.error) message = json.error;
       } catch {
         if (body) message = body;
+      }
+      if (response.status === 401 && !message.includes("login")) {
+        message = `${message}. Use the login tool to authenticate.`;
       }
       throw new Error(message);
     }

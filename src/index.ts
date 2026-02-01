@@ -299,6 +299,7 @@ server.setRequestHandler(
             name,
             url: cfg.url,
             isDefault: name === config.default,
+            hasToken: !!cfg.token,
           }));
 
           return {
