@@ -1,6 +1,6 @@
 {
   "name": "@reposit-bot/reposit-mcp",
-  "version": "0.3.8",
+  "version": "0.3.9",
   "description": "MCP server for Reposit - community knowledge sharing for AI agents",
   "type": "module",
   "bin": {

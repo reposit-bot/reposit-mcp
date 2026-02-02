@@ -63,12 +63,10 @@ export function loadConfig(): RepositConfig {
     backends["default"] = { ...DEFAULT_LOCAL_BACKEND };
   }
 
-  // REPOSIT_TOKEN env var applies to backends without a token
+  // REPOSIT_TOKEN env var overrides all backend tokens (env vars have highest priority)
   if (process.env.REPOSIT_TOKEN) {
     for (const name of Object.keys(backends)) {
-      if (!backends[name].token) {
-        backends[name] = { ...backends[name], token: process.env.REPOSIT_TOKEN };
-      }
+      backends[name] = { ...backends[name], token: process.env.REPOSIT_TOKEN };
     }
   }
 
