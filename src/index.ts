@@ -256,8 +256,8 @@ server.setRequestHandler(
             .map((r) => r.value);
 
           const errors = settled
-            .filter((r): r is PromiseRejectedResult => r.status === "rejected")
-            .map((r, i) => `${backends[i]?.name}: ${r.reason?.message ?? r.reason}`);
+            .map((r, i) => r.status === "rejected" ? `${backends[i].name}: ${r.reason?.message ?? r.reason}` : null)
+            .filter((e): e is string => e !== null);
 
           if (results.length === 0) {
             throw new Error(`All backends failed: ${errors.join("; ")}`);
