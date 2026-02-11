@@ -238,22 +238,38 @@ server.setRequestHandler(
 
           // When no backend specified, search all backends (default for search is "all")
           const backends = getBackends(config, backend ?? "all");
-          const results: { backend: string; solutions: Solution[]; total: number }[] = [];
 
-          await Promise.all(
+          const settled = await Promise.allSettled(
             backends.map(async ({ name: backendName, backend: backendConfig }) => {
               const client = new RepositClient(backendConfig.url, backendConfig.token);
               const result = await client.search(query, { tags, limit });
-              results.push({
+              return {
                 backend: backendName,
                 solutions: result.solutions,
                 total: result.total,
-              });
+              };
             })
           );
 
+          const results = settled
+            .filter((r): r is PromiseFulfilledResult<{ backend: string; solutions: Solution[]; total: number }> => r.status === "fulfilled")
+            .map((r) => r.value);
+
+          const errors = settled
+            .filter((r): r is PromiseRejectedResult => r.status === "rejected")
+            .map((r, i) => `${backends[i]?.name}: ${r.reason?.message ?? r.reason}`);
+
+          if (results.length === 0) {
+            throw new Error(`All backends failed: ${errors.join("; ")}`);
+          }
+
+          const output: Record<string, unknown> = { results };
+          if (errors.length > 0) {
+            output.errors = errors;
+          }
+
           return {
-            content: [{ type: "text", text: JSON.stringify(results, null, 2) }],
+            content: [{ type: "text", text: JSON.stringify(output, null, 2) }],
           };
         }
 

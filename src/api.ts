@@ -129,6 +129,7 @@ export class RepositClient {
 
     const response = await fetch(url, {
       ...options,
+      signal: AbortSignal.timeout(10_000),
       headers: {
         ...headers,
         ...(options.headers as Record<string, string>),
